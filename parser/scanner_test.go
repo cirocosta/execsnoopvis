@@ -94,4 +94,24 @@ var _ = Describe("Scanner", func() {
 
 	})
 
+	Context("having header + regular line", func() {
+
+		BeforeEach(func() {
+			content = `PCOMM            PID    PPID   RET ARGS
+go               17123  16232    0 /usr/local/go/bin/go build -v .`
+		})
+
+		It("detects the header", func() {
+			Expect(errors.Cause(err)).To(Equal(parser.ErrIsHeader))
+		})
+
+		It("is able to scan the next line", func() {
+			node, done, err = scanner.Scan()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(done).NotTo(BeTrue())
+			Expect(node.Command).To(Equal("go"))
+		})
+
+	})
+
 })
