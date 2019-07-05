@@ -9,11 +9,52 @@ import (
 
 var _ = Describe("graph", func() {
 
-	Describe("PopulateNodes", func() {
+	var (
+		nodes []*parser.Node
+		roots []*parser.Node
+	)
 
-		var (
-			nodes []*parser.Node
-		)
+	Describe("FindRoots", func() {
+
+		JustBeforeEach(func() {
+			roots = parser.FindRoots(nodes)
+		})
+
+		Context("having no relationships", func() {
+
+			BeforeEach(func() {
+				nodes = []*parser.Node{
+					{Parent: nil},
+					{Parent: nil},
+				}
+			})
+
+			It("all nodes are roots", func() {
+				Expect(roots).To(ConsistOf(nodes))
+			})
+
+		})
+
+		Context("having relationships", func() {
+
+			BeforeEach(func() {
+				nodes = []*parser.Node{{Parent: nil}}
+				nodes = append(nodes, &parser.Node{
+					Parent: nodes[0],
+				})
+			})
+
+			It("returns the nodes that are roots", func() {
+				Expect(roots).To(ConsistOf([]*parser.Node{
+					nodes[0],
+				}))
+			})
+
+		})
+
+	})
+
+	Describe("PopulateNodes", func() {
 
 		JustBeforeEach(func() {
 			parser.PopulateNodes(nodes)

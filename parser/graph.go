@@ -23,3 +23,15 @@ func PopulateNodes(nodes []*Node) {
 
 	return
 }
+
+func FindRoots(nodes []*Node) (roots []*Node) {
+	for _, node := range nodes {
+		if node.Parent != nil {
+			continue
+		}
+
+		roots = append(roots, node)
+	}
+
+	return
+}
