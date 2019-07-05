@@ -21,26 +21,26 @@ var _ = Describe("Node", func() {
 		},
 		Entry("nothing set", Case{
 			Node:     &parser.Node{},
-			Expected: " [0]",
+			Expected: "_0",
 		}),
 		Entry("without command", Case{
 			Node: &parser.Node{
 				Pid: 123,
 			},
-			Expected: " [123]",
+			Expected: "_123",
 		}),
 		Entry("without pid", Case{
 			Node: &parser.Node{
 				Command: "go",
 			},
-			Expected: "go [0]",
+			Expected: "go_0",
 		}),
 		Entry("with all set", Case{
 			Node: &parser.Node{
 				Command: "go",
 				Pid:     123,
 			},
-			Expected: "go [123]",
+			Expected: "go_123",
 		}),
 	)
 

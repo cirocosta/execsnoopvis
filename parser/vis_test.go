@@ -31,23 +31,86 @@ var _ = Describe("Vis", func() {
 
 		Context("having a non-empty node tree", func() {
 
-			BeforeEach(func() {
-				node1 := &parser.Node{}
-				node2 := &parser.Node{Parent: node1}
-				node1.Children = []*parser.Node{node2}
+			Context("without branching", func() {
 
-				roots = []*parser.Node{node1}
-			})
+				BeforeEach(func() {
+					node1 := &parser.Node{Pid: 1, Command: "foo"}
+					node2 := &parser.Node{Pid: 2, Command: "bar", Parent: node1}
+					node1.Children = []*parser.Node{node2}
 
-			It("succeeds", func() {
-				Expect(err).NotTo(HaveOccurred())
-			})
+					roots = []*parser.Node{node1}
+				})
 
-			It("prints a dot-formatted graph", func() {
-				Expect(content).To(Equal(`digraph G {
+				It("succeeds", func() {
+					Expect(err).NotTo(HaveOccurred())
+				})
+
+				It("prints a dot-formatted graph", func() {
+					Expect(content).To(Equal(`digraph G {
+	foo_1->bar_2;
+	bar_2;
+	foo_1;
 
 }
 `))
+
+				})
+
+			})
+
+			Context("with branching", func() {
+
+				BeforeEach(func() {
+					node1 := &parser.Node{Pid: 1, Command: "foo"}
+					node2 := &parser.Node{Pid: 2, Command: "bar", Parent: node1}
+					node3 := &parser.Node{Pid: 3, Command: "caz", Parent: node1}
+					node1.Children = []*parser.Node{node2, node3}
+
+					roots = []*parser.Node{node1}
+				})
+
+				It("succeeds", func() {
+					Expect(err).NotTo(HaveOccurred())
+				})
+
+				It("prints a dot-formatted graph", func() {
+					Expect(content).To(Equal(`digraph G {
+	foo_1->bar_2;
+	foo_1->caz_3;
+	bar_2;
+	caz_3;
+	foo_1;
+
+}
+`))
+
+				})
+
+			})
+
+			Context("with multiple roots", func() {
+
+				BeforeEach(func() {
+					node1 := &parser.Node{Pid: 1, Command: "bar"}
+					node2 := &parser.Node{Pid: 2, Command: "caz"}
+
+					roots = []*parser.Node{node1, node2}
+				})
+
+				It("succeeds", func() {
+					Expect(err).NotTo(HaveOccurred())
+				})
+
+				It("prints a dot-formatted graph", func() {
+					Expect(content).To(Equal(`digraph G {
+	bar_1;
+	caz_2;
+
+}
+`))
+
+				})
+
 			})
 
 		})

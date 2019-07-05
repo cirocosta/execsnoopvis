@@ -15,5 +15,5 @@ type Node struct {
 }
 
 func (n *Node) Name() string {
-	return fmt.Sprintf("%s [%d]", n.Command, n.Pid)
+	return fmt.Sprintf("%s_%d", n.Command, n.Pid)
 }

@@ -1,8 +1,6 @@
 package parser
 
 import (
-	// "strconv"
-
 	"github.com/awalterschulze/gographviz"
 	"github.com/pkg/errors"
 )
@@ -31,27 +29,29 @@ func Render(roots []*Node) (contents string, err error) {
 	must(graph.SetName(GRAPH_NAME))
 	must(graph.SetDir(true))
 
-	// firstRoot := roots[0]
+	for _, node := range roots {
+		fillGraph(node, graph)
+	}
 
 	contents = graph.String()
 	return
 }
 
-// FillFraph fills a given graph with the nodes and edges that pertain to that
+// fillFraph fills a given graph with the nodes and edges that pertain to that
 // tree.
 //
-func FillGraph(root *Node, graph *gographviz.Graph) {
-	// src := strconv.Itoa(root.Pid)
+func fillGraph(root *Node, graph *gographviz.Graph) {
+	src := root.Name()
 
-	// must(graph.AddNode(GRAPH_NAME, src))
+	must(graph.AddNode(GRAPH_NAME, src, nil))
 
-	// for _, child := range root.Children {
-	// 	dst := strconv.Itoa(child.Pid)
+	for _, child := range root.Children {
+		dst := child.Name()
 
-	// 	must(graph.AddEdge(src, dst, true, nil))
+		must(graph.AddEdge(src, dst, true, nil))
 
-	// 	FillGraph(child, graph)
-	// }
+		fillGraph(child, graph)
+	}
 
 	return
 }
