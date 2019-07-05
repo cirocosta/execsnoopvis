@@ -124,25 +124,48 @@ go               17124  16232    0 /usr/local/go/bin/go build -v .`
 
 			Context("not being a header", func() {
 
-				BeforeEach(func() {
-					content = "go               17123  16232    0 /usr/local/go/bin/go build -v ."
+				Context("not having argv", func() {
+
+					BeforeEach(func() {
+						content = "go               17123  16232    0"
+					})
+
+					It("succeeds", func() {
+						Expect(err).ToNot(HaveOccurred())
+					})
+
+					It("retrieves the fields accordingly", func() {
+						Expect(node.Command).To(Equal("go"))
+						Expect(node.Pid).To(BeNumerically("==", 17123))
+						Expect(node.Ppid).To(BeNumerically("==", 16232))
+						Expect(node.ExitCode).To(Equal(0))
+					})
+
 				})
 
-				It("succeeds", func() {
-					Expect(err).ToNot(HaveOccurred())
-				})
+				Context("having everything", func() {
 
-				It("retrieves the fields accordingly", func() {
-					Expect(node.Command).To(Equal("go"))
-					Expect(node.Pid).To(BeNumerically("==", 17123))
-					Expect(node.Ppid).To(BeNumerically("==", 16232))
-					Expect(node.ExitCode).To(Equal(0))
-					Expect(node.Argv).To(ConsistOf([]string{
-						"/usr/local/go/bin/go",
-						"build",
-						"-v",
-						".",
-					}))
+					BeforeEach(func() {
+						content = "go               17123  16232    0 /usr/local/go/bin/go build -v ."
+					})
+
+					It("succeeds", func() {
+						Expect(err).ToNot(HaveOccurred())
+					})
+
+					It("retrieves the fields accordingly", func() {
+						Expect(node.Command).To(Equal("go"))
+						Expect(node.Pid).To(BeNumerically("==", 17123))
+						Expect(node.Ppid).To(BeNumerically("==", 16232))
+						Expect(node.ExitCode).To(Equal(0))
+						Expect(node.Argv).To(ConsistOf([]string{
+							"/usr/local/go/bin/go",
+							"build",
+							"-v",
+							".",
+						}))
+					})
+
 				})
 
 			})

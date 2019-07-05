@@ -78,7 +78,7 @@ func (p *Scanner) Scan() (node Node, done bool, err error) {
 func parseLine(line string) (node Node, err error) {
 	fields := strings.Fields(line)
 
-	if len(fields) < 5 {
+	if len(fields) < 4 {
 		err = errors.Errorf("not enough fields")
 		return
 	}
@@ -110,7 +110,9 @@ func parseLine(line string) (node Node, err error) {
 		return
 	}
 
-	node.Argv = fields[4:len(fields)]
+	if len(fields) >= 4 {
+		node.Argv = fields[4:len(fields)]
+	}
 
 	return
 }
