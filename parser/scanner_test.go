@@ -14,102 +14,154 @@ var _ = Describe("Scanner", func() {
 
 	var (
 		content string
-		done    bool
 		err     error
 		node    parser.Node
 		scanner parser.Scanner
 	)
 
-	JustBeforeEach(func() {
-		scanner = parser.NewScanner(bytes.NewReader([]byte(content)))
-		node, done, err = scanner.Scan()
-	})
+	Describe("ScanAll", func() {
 
-	Context("on empty reader", func() {
+		var (
+			nodes []*parser.Node
+		)
 
-		BeforeEach(func() {
-			content = ""
+		JustBeforeEach(func() {
+			scanner = parser.NewScanner(bytes.NewReader([]byte(content)))
+			nodes, err = scanner.ScanAll()
 		})
 
-		It("succeeds", func() {
-			Expect(err).NotTo(HaveOccurred())
-		})
-
-		It("is done", func() {
-			Expect(done).To(BeTrue())
-		})
-
-	})
-
-	Context("having a line to parse", func() {
-
-		Context("not having enough fields", func() {
+		Context("empty reader", func() {
 
 			BeforeEach(func() {
-				content = "A"
-			})
-
-			It("fails", func() {
-				Expect(err).To(HaveOccurred())
-			})
-
-		})
-
-		Context("being the line a header", func() {
-
-			BeforeEach(func() {
-				content = "PCOMM            PID    PPID   RET ARGS"
-			})
-
-			It("returns an error that indicates that it's a header", func() {
-				Expect(errors.Cause(err)).To(Equal(parser.ErrIsHeader))
-			})
-
-		})
-
-		Context("not being a header", func() {
-
-			BeforeEach(func() {
-				content = "go               17123  16232    0 /usr/local/go/bin/go build -v ."
+				content = ""
 			})
 
 			It("succeeds", func() {
-				Expect(err).ToNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 			})
 
-			It("retrieves the fields accordingly", func() {
-				Expect(node.Command).To(Equal("go"))
-				Expect(node.Pid).To(BeNumerically("==", 17123))
-				Expect(node.Ppid).To(BeNumerically("==", 16232))
-				Expect(node.ExitCode).To(Equal(0))
-				Expect(node.Argv).To(ConsistOf([]string{
-					"/usr/local/go/bin/go",
-					"build",
-					"-v",
-					".",
-				}))
+			It("returns no nodes", func() {
+				Expect(nodes).To(BeEmpty())
+			})
+		})
+
+		Context("entire file", func() {
+
+			BeforeEach(func() {
+				content = `PCOMM            PID    PPID   RET ARGS
+go               17123  16232    0 /usr/local/go/bin/go build -v .
+go               17124  16232    0 /usr/local/go/bin/go build -v .`
 			})
 
+			It("succeeds", func() {
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			It("returns node nodes", func() {
+				Expect(nodes).To(HaveLen(2))
+			})
 		})
 
 	})
 
-	Context("having header + regular line", func() {
+	Describe("Scan", func() {
 
-		BeforeEach(func() {
-			content = `PCOMM            PID    PPID   RET ARGS
-go               17123  16232    0 /usr/local/go/bin/go build -v .`
-		})
+		var (
+			done bool
+		)
 
-		It("detects the header", func() {
-			Expect(errors.Cause(err)).To(Equal(parser.ErrIsHeader))
-		})
-
-		It("is able to scan the next line", func() {
+		JustBeforeEach(func() {
+			scanner = parser.NewScanner(bytes.NewReader([]byte(content)))
 			node, done, err = scanner.Scan()
-			Expect(err).NotTo(HaveOccurred())
-			Expect(done).NotTo(BeTrue())
-			Expect(node.Command).To(Equal("go"))
+		})
+
+		Context("on empty reader", func() {
+
+			BeforeEach(func() {
+				content = ""
+			})
+
+			It("succeeds", func() {
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			It("is done", func() {
+				Expect(done).To(BeTrue())
+			})
+
+		})
+
+		Context("having a line to parse", func() {
+
+			Context("not having enough fields", func() {
+
+				BeforeEach(func() {
+					content = "A"
+				})
+
+				It("fails", func() {
+					Expect(err).To(HaveOccurred())
+				})
+
+			})
+
+			Context("being the line a header", func() {
+
+				BeforeEach(func() {
+					content = "PCOMM            PID    PPID   RET ARGS"
+				})
+
+				It("returns an error that indicates that it's a header", func() {
+					Expect(errors.Cause(err)).To(Equal(parser.ErrIsHeader))
+				})
+
+			})
+
+			Context("not being a header", func() {
+
+				BeforeEach(func() {
+					content = "go               17123  16232    0 /usr/local/go/bin/go build -v ."
+				})
+
+				It("succeeds", func() {
+					Expect(err).ToNot(HaveOccurred())
+				})
+
+				It("retrieves the fields accordingly", func() {
+					Expect(node.Command).To(Equal("go"))
+					Expect(node.Pid).To(BeNumerically("==", 17123))
+					Expect(node.Ppid).To(BeNumerically("==", 16232))
+					Expect(node.ExitCode).To(Equal(0))
+					Expect(node.Argv).To(ConsistOf([]string{
+						"/usr/local/go/bin/go",
+						"build",
+						"-v",
+						".",
+					}))
+				})
+
+			})
+
+		})
+
+		Context("having header + regular line", func() {
+
+			BeforeEach(func() {
+				content = `PCOMM            PID    PPID   RET ARGS
+go               17123  16232    0 /usr/local/go/bin/go build -v .`
+			})
+
+			It("detects the header", func() {
+				Expect(errors.Cause(err)).To(Equal(parser.ErrIsHeader))
+			})
+
+			It("is able to scan the next line", func() {
+				node, done, err = scanner.Scan()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(done).NotTo(BeTrue())
+				Expect(node.Command).To(Equal("go"))
+			})
+
 		})
 
 	})

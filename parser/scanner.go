@@ -35,7 +35,7 @@ func (p *Scanner) ScanAll() (nodes []*Node, err error) {
 	for {
 		node, done, err = p.Scan()
 		if err != nil {
-			if err == ErrIsHeader {
+			if errors.Cause(err) == ErrIsHeader {
 				continue
 			}
 

@@ -23,7 +23,7 @@ func mainWithExitCode() (statusCode int) {
 
 	file, err := os.Open(*input)
 	if err != nil {
-		fmt.Println("failed opening file %s - %+v\n", *input, err)
+		fmt.Printf("failed opening file %s - %+v\n", *input, err)
 		statusCode = 1
 		return
 	}
@@ -34,7 +34,7 @@ func mainWithExitCode() (statusCode int) {
 
 	nodes, err := scanner.ScanAll()
 	if err != nil {
-		fmt.Println("failed while scanning file: %v", err)
+		fmt.Printf("failed while scanning file: %v", err)
 		statusCode = 1
 		return
 	}
@@ -44,7 +44,7 @@ func mainWithExitCode() (statusCode int) {
 
 	err = parser.Render(roots, os.Stdout)
 	if err != nil {
-		fmt.Println("failed rendering graph: %v", err)
+		fmt.Printf("failed rendering graph: %v", err)
 		statusCode = 1
 		return
 	}
