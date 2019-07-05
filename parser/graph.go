@@ -24,6 +24,8 @@ func PopulateNodes(nodes []*Node) {
 	return
 }
 
+// FindRoots searches for those nodes in a set of nodes who are roots of trees.
+//
 func FindRoots(nodes []*Node) (roots []*Node) {
 	for _, node := range nodes {
 		if node.Parent != nil {

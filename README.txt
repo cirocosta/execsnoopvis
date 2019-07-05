@@ -51,16 +51,6 @@ SCANNING
 
 
 
-FOREST FORMATION
-
-	// given a set of nodes, form the trees by creating the relationships
-	// - returns the set of roots the 
-
-
-
-
-
-
 ROOTS DISCOVERY
 
 	// for every node that we have discovered, find those whose `parent` are
@@ -98,3 +88,20 @@ EXAMPLE INPUT
 	jump             17286  16232    0 /usr/bin/jump chdir
 	ls               17291  16232    0 /bin/ls --color=auto
 	jump             17292  16232    0 /usr/bin/jump chdir
+
+
+DOT NOTATION
+
+	
+	digraph G {
+
+		subgraph G0 {
+			color=gray
+		}
+
+
+		subgraph G0 {
+			color=gray
+		}
+	}
+

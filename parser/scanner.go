@@ -23,6 +23,38 @@ func NewScanner(reader io.Reader) Scanner {
 	}
 }
 
+// ScanAll scans `Nodes` from start to end, consuming everything from the reader
+// until it has been completely consumed.
+//
+func (p *Scanner) ScanAll() (nodes []*Node, err error) {
+	var (
+		node Node
+		done bool
+	)
+
+	for {
+		node, done, err = p.Scan()
+		if err != nil {
+			if err == ErrIsHeader {
+				continue
+			}
+
+			err = errors.Wrapf(err, "failed to scan line")
+			return
+		}
+
+		if done {
+			return
+		}
+
+		nodes = append(nodes, &node)
+	}
+
+	return
+}
+
+// Scan cosumes a single line from the reader.
+//
 func (p *Scanner) Scan() (node Node, done bool, err error) {
 	done = !p.scanner.Scan()
 	if done {
