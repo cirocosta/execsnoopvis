@@ -60,6 +60,11 @@ go               17124  16232    0 /usr/local/go/bin/go build -v .`
 			It("returns node nodes", func() {
 				Expect(nodes).To(HaveLen(2))
 			})
+
+			It("has fields properly set", func() {
+				Expect(nodes[0].Pid).To(Equal(uint64(17123)))
+				Expect(nodes[1].Pid).To(Equal(uint64(17124)))
+			})
 		})
 
 	})

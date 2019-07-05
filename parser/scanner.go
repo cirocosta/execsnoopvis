@@ -27,12 +27,12 @@ func NewScanner(reader io.Reader) Scanner {
 // until it has been completely consumed.
 //
 func (p *Scanner) ScanAll() (nodes []*Node, err error) {
-	var (
-		node Node
-		done bool
-	)
-
 	for {
+		var (
+			node Node
+			done bool
+		)
+
 		node, done, err = p.Scan()
 		if err != nil {
 			if errors.Cause(err) == ErrIsHeader {

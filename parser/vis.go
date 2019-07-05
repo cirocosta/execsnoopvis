@@ -24,7 +24,7 @@ func Render(roots []*Node) (contents string, err error) {
 		return
 	}
 
-	graph := gographviz.NewGraph()
+	graph := gographviz.NewEscape()
 
 	must(graph.SetName(GRAPH_NAME))
 	must(graph.SetDir(true))
@@ -40,7 +40,7 @@ func Render(roots []*Node) (contents string, err error) {
 // fillFraph fills a given graph with the nodes and edges that pertain to that
 // tree.
 //
-func fillGraph(root *Node, graph *gographviz.Graph) {
+func fillGraph(root *Node, graph gographviz.Interface) {
 	src := root.Name()
 
 	must(graph.AddNode(GRAPH_NAME, src, nil))
