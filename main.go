@@ -42,12 +42,14 @@ func mainWithExitCode() (statusCode int) {
 	parser.PopulateNodes(nodes)
 	roots := parser.FindRoots(nodes)
 
-	err = parser.Render(roots, os.Stdout)
+	contents, err := parser.Render(roots)
 	if err != nil {
 		fmt.Printf("failed rendering graph: %v", err)
 		statusCode = 1
 		return
 	}
+
+	fmt.Println(contents)
 
 	return
 }

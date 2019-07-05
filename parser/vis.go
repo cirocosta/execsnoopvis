@@ -1,11 +1,10 @@
 package parser
 
 import (
-	"io"
 	// "strconv"
 
 	"github.com/awalterschulze/gographviz"
-	// "github.com/pkg/errors"
+	"github.com/pkg/errors"
 )
 
 func must(err error) {
@@ -16,24 +15,25 @@ func must(err error) {
 	panic(err)
 }
 
-const GRAPH_NAME = "graph"
+const GRAPH_NAME = "G"
 
 // Render renders the trees described by the `roots` argument to `writer` using
 // the `dot` syntax.
 //
-func Render(roots []*Node, writer io.Writer) (err error) {
-	// if len(roots) == 0 {
-	// 	err = errors.Errorf("number of roots must be >= 1")
-	// 	return
-	// }
+func Render(roots []*Node) (contents string, err error) {
+	if len(roots) == 0 {
+		err = errors.Errorf("number of roots must be >= 1")
+		return
+	}
 
-	// graph := gographviz.NewGraph()
+	graph := gographviz.NewGraph()
 
-	// must(graph.SetName(GRAPH_NAME))
-	// must(graph.SetDir(true))
+	must(graph.SetName(GRAPH_NAME))
+	must(graph.SetDir(true))
 
 	// firstRoot := roots[0]
 
+	contents = graph.String()
 	return
 }
 
