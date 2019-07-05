@@ -1,0 +1,46 @@
+resource_types:
+- name: semver
+  type: registry-image
+  source:
+    repository: concourse/semver-resource
+
+
+resources:
+  - name: repository
+    type: git
+    source:
+      uri: https://((github-token))@github.com/cirocosta/execsnoopvis
+      ignore_paths: [ ./VERSION ]
+
+  - name: container-image
+    type: registry-image
+    source:
+      repository: cirocosta/execsnoopvis
+      tag: rc
+      username: ((docker-user))
+      password: ((docker-password))
+
+
+jobs:
+  - name: build
+    public: true
+    plan:
+      - in_parallel:
+        - {get: repository, trigger: true}
+      - in_parallel:
+          fail_fast: true
+          steps:
+            - task: build-image
+              privileged: true
+              params: {TARGET: "release"}
+              file: repository/ci/tasks/build.yml
+            - task: test
+              privileged: true
+              output_mapping: { image: discard }
+              params: {TARGET: "test"}
+              file: repository/ci/tasks/build.yml
+      - put: container-image
+        inputs: [image]
+        get_params: {format: oci}
+        params:
+          image: image/image.tar
