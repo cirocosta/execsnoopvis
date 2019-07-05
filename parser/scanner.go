@@ -3,6 +3,7 @@ package parser
 import (
 	"bufio"
 	"io"
+	"strconv"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -45,10 +46,39 @@ func (p *Scanner) Scan() (node Node, done bool, err error) {
 func parseLine(line string) (node Node, err error) {
 	fields := strings.Fields(line)
 
-	if len(fields) != 5 {
+	if len(fields) < 5 {
 		err = errors.Errorf("not enough fields")
 		return
 	}
+
+	if fields[0] == "PCOMM" && fields[1] == "PID" {
+		err = ErrIsHeader
+		return
+	}
+
+	node.Command = fields[0]
+	node.Pid, err = strconv.ParseUint(fields[1], 10, 32)
+	if err != nil {
+		err = errors.Wrapf(err,
+			"pid field `%s` is not an unsigned int", fields[1])
+		return
+	}
+
+	node.Ppid, err = strconv.ParseUint(fields[2], 10, 32)
+	if err != nil {
+		err = errors.Wrapf(err,
+			"ppid field `%s` is not an unsigned int", fields[2])
+		return
+	}
+
+	node.ExitCode, err = strconv.Atoi(fields[3])
+	if err != nil {
+		err = errors.Wrapf(err,
+			"ppid field `%s` is not an int", fields[3])
+		return
+	}
+
+	node.Argv = fields[4:len(fields)]
 
 	return
 }

@@ -1,13 +1,11 @@
 package parser
 
 type Node struct {
-	Pid uint
-
 	Argv     []string
+	Children []*Node
 	Command  string
 	ExitCode int
-	Ppid     uint
-
 	Parent   *Node
-	Children []*Node
+	Pid      uint64
+	Ppid     uint64
 }
