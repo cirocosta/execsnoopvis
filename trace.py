@@ -3,7 +3,7 @@
 # trace.py  Traces the execution of processes.
 #
 # [execve]: https://elixir.bootlin.com/linux/v5.0/source/fs/exec.c#L1963
-# [close]:
+# [do_exit]: https://elixir.bootlin.com/linux/v5.0/source/kernel/exit.c#L773
 
 from __future__ import division
 from __future__ import print_function
