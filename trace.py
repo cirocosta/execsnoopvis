@@ -3,7 +3,7 @@
 # trace.py  Traces the execution of processes.
 #
 # [execve]: https://elixir.bootlin.com/linux/v5.0/source/fs/exec.c#L1963
-# [close]: 
+# [close]:
 
 from __future__ import division
 from __future__ import print_function
@@ -11,7 +11,8 @@ from bcc import BPF
 from pprint import pprint
 
 
-program = BPF(text=r"""
+program = BPF(
+    text=r"""
 #include <linux/sched.h>
 #include <uapi/linux/ptrace.h>
 
@@ -90,15 +91,14 @@ k__do_exit(struct pt_regs* ctx, long code)
         __submit_finish(ctx, code);
         return 0;
 }
-""")
+"""
+)
 
 program.attach_kretprobe(
-        event=program.get_syscall_fnname("execve"),
-        fn_name="kr__sys_execve")
+    event=program.get_syscall_fnname("execve"), fn_name="kr__sys_execve"
+)
 
-program.attach_kprobe(
-        event="do_exit",
-        fn_name="k__do_exit")
+program.attach_kprobe(event="do_exit", fn_name="k__do_exit")
 
 
 class EventType(object):
@@ -108,24 +108,34 @@ class EventType(object):
 
 procs = {}
 
+
 def handle_events(cpu, data, size):
     event = program["events"].event(data)
 
     if event.type == EventType.EVENT_START:
         procs[event.pid] = event
-        print("start")
 
     elif event.type == EventType.EVENT_FINISH:
         if not event.pid in procs:
             return
         proc = procs[event.pid]
-        seconds_elapsed = (event.ts - proc.ts) / (10**9)
+        elapsed = (event.ts - proc.ts) / (10 ** 9)
 
-        print("finished %s in %3fs" % (event.comm, seconds_elapsed))
+        print(
+            "{:<16d} {:<16d} {:<16d} {:<16f} {:<16}".format(
+                proc.pid, proc.ppid, proc.exitcode, elapsed, proc.comm
+            )
+        )
         del procs[event.pid]
 
 
 program["events"].open_perf_buffer(handle_events)
+
+print(
+    "{:<16} {:<16} {:<16} {:<16} {:<16} ".format(
+        "PID", "PPID", "CODE", "TIME(s)", "COMM"
+    )
+)
 
 while 1:
     try:
