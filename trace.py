@@ -5,6 +5,7 @@
 # [execve]: https://elixir.bootlin.com/linux/v5.0/source/fs/exec.c#L1963
 # [close]: 
 
+from __future__ import division
 from __future__ import print_function
 from bcc import BPF
 from pprint import pprint
@@ -13,8 +14,6 @@ from pprint import pprint
 program = BPF(text=r"""
 #include <linux/sched.h>
 #include <uapi/linux/ptrace.h>
-
-#define ARG_LEN 128
 
 BPF_PERF_OUTPUT(events);
 
@@ -27,61 +26,79 @@ enum event_type
 struct data_t
 {
         u32 pid, ppid;
+        int exitcode;
         u64 ts;
         char comm[TASK_COMM_LEN];
-        char argv[ARG_LEN];
         enum event_type type;
 };
 
-
 static inline void
-__submit(struct pt_regs* ctx, enum event_type type)
+__submit(struct pt_regs* ctx, struct data_t* data)
 {
         struct task_struct* task;
-        struct data_t data = {};
 
         task = (struct task_struct*)bpf_get_current_task();
 
-        data.type = type;
-        data.ts = bpf_ktime_get_ns();
-        data.pid = task->tgid;
-        data.ppid = task->real_parent->tgid;
-        bpf_get_current_comm(&data.comm, sizeof(data.comm));
+        data->ts = bpf_ktime_get_ns();
+        data->pid = task->tgid;
+        data->ppid = task->real_parent->tgid;
+        bpf_get_current_comm(&data->comm, sizeof(data->comm));
 
-        events.perf_submit(ctx, &data, sizeof(data));
+        events.perf_submit(ctx, data, sizeof(*data));
+}
+
+static inline void
+__submit_start(struct pt_regs* ctx)
+{
+        struct data_t data = {};
+
+        data.type = EVENT_START;
+
+        __submit(ctx, &data);
+}
+
+static inline void
+__submit_finish(struct pt_regs* ctx, int code)
+{
+        struct data_t data = {};
+
+        data.type = EVENT_FINISH;
+        data.exitcode = code;
+
+        __submit(ctx, &data);
 }
 
 int
-syscall__execve(struct pt_regs* ctx,
-                const char __user* filename,
-                const char __user* const __user* __argv,
-                const char __user* const __user* __envp)
+kr__sys_execve(struct pt_regs* ctx,
+               const char __user* filename,
+               const char __user* const __user* __argv,
+               const char __user* const __user* __envp)
 {
-        bpf_trace_printk("start\n");
+        int ret = PT_REGS_RC(ctx);
+        if (ret != 0) {
+                return 0;
+        }
 
-        __submit(ctx, EVENT_START);
+        __submit_start(ctx);
 
         return 0;
 }
 
 int
-kprobe__do_exit(struct pt_regs* ctx, long code)
+k__do_exit(struct pt_regs* ctx, long code)
 {
-        bpf_trace_printk("finish\n");
-
-        __submit(ctx, EVENT_FINISH);
-
+        __submit_finish(ctx, code);
         return 0;
 }
 """)
 
-program.attach_kprobe(
+program.attach_kretprobe(
         event=program.get_syscall_fnname("execve"),
-        fn_name="syscall__execve")
+        fn_name="kr__sys_execve")
 
 program.attach_kprobe(
         event="do_exit",
-        fn_name="kprobe__do_exit")
+        fn_name="k__do_exit")
 
 
 class EventType(object):
@@ -101,12 +118,11 @@ def handle_events(cpu, data, size):
     elif event.type == EventType.EVENT_FINISH:
         if not event.pid in procs:
             return
-
-        seconds_elapsed = (event.ts - procs[event.pid].ts) / (10**9)
+        proc = procs[event.pid]
+        seconds_elapsed = (event.ts - proc.ts) / (10**9)
 
         print("finished %s in %3fs" % (event.comm, seconds_elapsed))
         del procs[event.pid]
-    
 
 
 program["events"].open_perf_buffer(handle_events)
