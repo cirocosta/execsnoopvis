@@ -16,16 +16,12 @@ program = BPF(
 #include <linux/sched.h>
 #include <uapi/linux/ptrace.h>
 
-#define ARG_LEN 64
-#define MAX_ARGS 16
-
 BPF_PERF_OUTPUT(events);
 
 enum event_type
 {
         EVENT_START = 1,
         EVENT_FINISH,
-        EVENT_ARG,
 };
 
 struct data_t
@@ -33,8 +29,6 @@ struct data_t
         enum event_type type;
 
         char comm[TASK_COMM_LEN];
-        char arg[ARG_LEN];
-
         int exitcode;
         u32 pid, ppid;
         u64 ts;
@@ -76,21 +70,6 @@ __submit_finish(struct pt_regs* ctx, int code)
         __submit(ctx, &data);
 }
 
-static inline void
-__submit_arg(struct pt_regs* ctx, void* arg)
-{
-        struct data_t data = {};
-        struct task_struct* task;
-
-        task = (struct task_struct*)bpf_get_current_task();
-
-        bpf_probe_read(data.arg, sizeof(data.arg), arg);
-        data.type = EVENT_ARG;
-        data.pid = task->tgid;
-
-        events.perf_submit(ctx, &data, sizeof(data));
-}
-
 int
 kr__sys_execve(struct pt_regs* ctx,
                const char __user* filename,
@@ -104,25 +83,6 @@ kr__sys_execve(struct pt_regs* ctx,
 
         __submit_start(ctx);
 
-
-        if ((void*)&__argv[1] == NULL) 
-            goto out;
-        else 
-            __submit_arg(ctx, (void*)&__argv[1]);
-
-
-//       #pragma unroll
-//       for (int i = 1; i < MAX_ARGS; i++) {
-//               arg = (void*)&__argv[i];
-//
-//               if (arg == NULL) {
-//                   return 0;
-//               }
-//
-//               __submit_arg(ctx, arg);
-//       }
-
-out:
         return 0;
 }
 
@@ -145,7 +105,6 @@ program.attach_kprobe(event="do_exit", fn_name="k__do_exit")
 class EventType(object):
     EVENT_START = 1
     EVENT_FINISH = 2
-    EVENT_ARG = 3
 
 
 procs = {}
@@ -156,11 +115,7 @@ def handle_events(cpu, data, size):
 
     if event.type == EventType.EVENT_START:
         procs[event.pid] = event
-        procs[event.pid].argv = []
-
-    elif event.type == EventType.EVENT_ARG:
-        procs[event.pid].argv.append(event.arg)
-        print("!")
+        procs[event.pid].argv = get_cmdline(event.pid)
 
     elif event.type == EventType.EVENT_FINISH:
         if not event.pid in procs:
@@ -169,12 +124,21 @@ def handle_events(cpu, data, size):
         elapsed = (event.ts - proc.ts) / (10 ** 9)
 
         print(
-            "{:<16d} {:<16d} {:<16d} {:<16f} {:<16} {}".format(
-                proc.pid, proc.ppid, proc.exitcode, elapsed, proc.comm,
-                " ".join(proc.argv),
+            "{:<16d} {:<16d} {:<16d} {:<16f} {}".format(
+                proc.pid, proc.ppid, proc.exitcode, elapsed, " ".join(proc.argv),
             )
         )
         del procs[event.pid]
+
+
+
+def get_cmdline(pid):
+    try:
+        with open("/proc/%d/cmdline" % pid) as f:
+            return f.read().split('\0')
+    except IOError:
+        pass
+    return []
 
 
 program["events"].open_perf_buffer(handle_events)
