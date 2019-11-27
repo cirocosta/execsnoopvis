@@ -1,107 +1,22 @@
+VISUALIZING
+
+	todo
 
 
-TYPES
-
-	type Node struct {
-		Pid uint
-
-		Argv     []string
-		Command  string
-		ExitCode int
-		Ppid     uint
-
-		Parent   *Node
-		Children []*Node
-	}
+TRACING
 
 
+	./trace.py
+	PID              PPID             CODE             TIME(s)          ARGV
+	3355             31336            0                0.111638         /var/gdn/assets/linux/bin/runc --root /run/runc --debug --log /tmp/16
+	3070             31336            0                50.039328        /var/gdn/assets/linux/bin/runc --root /run/runc events d7d7083e-fd41-
+	3428             3421             0                0.209312         /var/gdn/assets/linux/bin/runc --root /run/runc --debug --log /proc/3
+	3463             3457             0                0.206789         /var/gdn/assets/linux/bin/runc --root /run/runc --debug --log /proc/3
+	3540             3533             0                0.195814         /var/gdn/assets/linux/bin/runc --root /run/runc --debug --log /proc/3
+	32577            31336            0                265.008811       /var/gdn/assets/linux/bin/runc --root /run/runc events 98413147-1445-
+	2520             31336            0                75.007661        /var/gdn/assets/linux/bin/runc --root /run/runc events 6df98256-d1e8-
+	1897             31336            0                95.007827        /var/gdn/assets/linux/bin/runc --root /run/runc events e263e089-b43d-
+	640              31336            0                185.009876       /var/gdn/assets/linux/bin/runc --root /run/runc events d2a92284-926b-
+	1414             31336            0                150.009166       /var/gdn/assets/linux/bin/runc --root /run/runc events 6ad9b5f3-505b-
 
-SCANNING
-
-	// given a reader, parse the lines and create the list of per-pid
-	// mapping of those entries
-
-
-	var perPidNodeMapping = map[uint]*Node
-
-	for scanner.Scan() {
-		line := scanner.Text()
-
-		node, err := ParseNode(line)
-		if err != nil {
-			return
-		}
-
-		perPidNodeMapping[node.Pid] = node
-	}
-
-	// fill the `*Parent` pointers
-	// fill the `*Parent` pointers
-	for _, node := range perPidNodeMapping {
-		node.Parent = perPidNodeMapping[node.Ppid]
-
-		if node.Parent != nil {
-			node.Parent.Children = append(
-				node.Parent.Children, 
-				node,
-			)
-		}
-	}
-
-
-
-
-ROOTS DISCOVERY
-
-	// for every node that we have discovered, find those whose `parent` are
-	// `nil`
-
-	for _, node := range 
-
-
-
-
-EXAMPLE INPUT
-
-
-	PCOMM            PID    PPID   RET ARGS
-	go               17123  16232    0 /usr/local/go/bin/go build -v .
-	cgo              17130  17123    0 /usr/local/go/pkg/tool/linux_amd64/cgo -V=full
-	compile          17131  17123    0 /usr/local/go/pkg/tool/linux_amd64/compile -V=full
-	compile          17142  17123    0 /usr/local/go/pkg/tool/linux_amd64/compile -V=full
-	compile          17137  17123    0 /usr/local/go/pkg/tool/linux_amd64/compile -V=full
-	compile          17147  17123    0 /usr/local/go/pkg/tool/linux_amd64/compile -V=full
-	asm              17158  17123    0 /usr/local/go/pkg/tool/linux_amd64/asm -V=full
-	asm              17160  17123    0 /usr/local/go/pkg/tool/linux_amd64/asm -V=full
-	asm              17164  17123    0 /usr/local/go/pkg/tool/linux_amd64/asm -V=full
-	asm              17169  17123    0 /usr/local/go/pkg/tool/linux_amd64/asm -V=full
-	link             17178  17123    0 /usr/local/go/pkg/tool/linux_amd64/link -V=full
-	jump             17184  16232    0 /usr/bin/jump chdir
-	go               17189  16232    0 /usr/local/go/bin/go clean
-	jump             17196  16232    0 /usr/bin/jump chdir
-	go               17201  16232    0 /usr/local/go/bin/go build -v .
-	cgo              17210  17201    0 /usr/local/go/pkg/tool/linux_amd64/cgo -V=full
-	compile          17211  17201    0 /usr/local/go/pkg/tool/linux_amd64/compile -V=full
-	jump             17276  16232    0 /usr/bin/jump chdir
-	sh               17284  17283    0 /bin/sh -c command -v debian-sa1 > /dev/nu...
-	debian-sa1       17285  17284    0 /usr/lib/sysstat/debian-sa1 1 1
-	jump             17286  16232    0 /usr/bin/jump chdir
-	ls               17291  16232    0 /bin/ls --color=auto
-	jump             17292  16232    0 /usr/bin/jump chdir
-
-
-DOT NOTATION
-
-	
-	digraph G {
-
-		subgraph G0 {
-			color=gray
-		}
-
-
-		subgraph G0 {
-			color=gray
-		}
-	}
 
