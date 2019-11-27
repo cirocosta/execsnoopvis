@@ -10,9 +10,25 @@ from __future__ import print_function
 from bcc import BPF
 from pprint import pprint
 
+import argparse
 
-program = BPF(
-    text=r"""
+
+# arguments
+examples = """examples:
+    ./trace.py              # trace all processes
+    ./trace.py --comm runc  # trace only runc-based processes
+"""
+
+parser = argparse.ArgumentParser(
+    description="capture process execution times",
+    formatter_class=argparse.RawDescriptionHelpFormatter,
+    epilog=examples,
+)
+parser.add_argument("-c", "--comm", help="command to filter by")
+
+args = parser.parse_args()
+
+bpf_text = r"""
 #include <linux/sched.h>
 #include <uapi/linux/ptrace.h>
 
@@ -93,7 +109,9 @@ k__do_exit(struct pt_regs* ctx, long code)
         return 0;
 }
 """
-)
+
+
+program = BPF(text=bpf_text)
 
 program.attach_kretprobe(
     event=program.get_syscall_fnname("execve"), fn_name="kr__sys_execve"
@@ -114,6 +132,9 @@ def handle_events(cpu, data, size):
     event = program["events"].event(data)
 
     if event.type == EventType.EVENT_START:
+        if args.comm:
+            if args.comm != event.comm:
+                return
         procs[event.pid] = event
         procs[event.pid].argv = get_cmdline(event.pid)
 
@@ -125,17 +146,16 @@ def handle_events(cpu, data, size):
 
         print(
             "{:<16d} {:<16d} {:<16d} {:<16f} {}".format(
-                proc.pid, proc.ppid, proc.exitcode, elapsed, " ".join(proc.argv),
+                proc.pid, proc.ppid, proc.exitcode, elapsed, " ".join(proc.argv)
             )
         )
         del procs[event.pid]
 
 
-
 def get_cmdline(pid):
     try:
         with open("/proc/%d/cmdline" % pid) as f:
-            return f.read().split('\0')
+            return f.read().split("\0")
     except IOError:
         pass
     return []
@@ -145,7 +165,7 @@ program["events"].open_perf_buffer(handle_events)
 
 print(
     "{:<16} {:<16} {:<16} {:<16} {:<16} ".format(
-        "PID", "PPID", "CODE", "TIME(s)", "COMM"
+        "PID", "PPID", "CODE", "TIME(s)", "ARGV"
     )
 )
 
