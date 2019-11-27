@@ -6,7 +6,7 @@ VISUALIZING
 TRACING
 
 
-	./trace.py
+	./trace.py --comm=runc
 	PID              PPID             CODE             TIME(s)          ARGV
 	3355             31336            0                0.111638         /var/gdn/assets/linux/bin/runc --root /run/runc --debug --log /tmp/16
 	3070             31336            0                50.039328        /var/gdn/assets/linux/bin/runc --root /run/runc events d7d7083e-fd41-
