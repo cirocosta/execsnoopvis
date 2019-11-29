@@ -146,7 +146,7 @@ def handle_events(cpu, data, size):
 
         print(
             "{:<16d} {:<16d} {:<16d} {:<16f} {}".format(
-                proc.pid, proc.ppid, proc.exitcode, elapsed, " ".join(proc.argv)
+                proc.pid, proc.ppid, (event.exitcode >> 8), elapsed, " ".join(proc.argv)
             )
         )
         del procs[event.pid]
